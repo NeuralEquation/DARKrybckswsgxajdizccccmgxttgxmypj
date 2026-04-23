@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>東京ディズニーランド 計画 | Cyber Neon PWA</title>
+  <meta name="description" content="Tokyo Disneyland planner with manual wait times, GPS ranking, fallback positioning, and restaurant list.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#07101f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" href="./favicon.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <button class="theme-settings-toggle" id="theme-settings-toggle" type="button" aria-label="テーマ設定" aria-expanded="false" aria-controls="theme-settings-panel">
+    <svg class="theme-settings-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.1 7.1 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.48a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.4 1.05.72 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/>
+    </svg>
+  </button>
+  <aside class="theme-settings-panel is-hidden" id="theme-settings-panel" aria-label="テーマ設定">
+    <p class="theme-settings-title">Theme</p>
+    <div class="theme-settings-actions">
+      <button class="theme-option-button is-active" id="theme-cyber-button" type="button" data-theme-choice="cyber">Cyber</button>
+      <button class="theme-option-button" id="theme-original-button" type="button" data-theme-choice="original">Original</button>
+    </div>
+  </aside>
+  <div class="app-shell">
+    <header class="app-header">
+      <p class="eyebrow">Tokyo Disneyland</p>
+      <h1>Mobile Planner</h1>
+      <p class="header-copy">待ち時間を手入力して、今いる場所から回りやすい候補をすばやく整理できます。</p>
+    </header>
+
+    <section class="location-panel" aria-labelledby="location-heading">
+      <div class="section-head compact">
+        <div>
+          <p class="section-kicker">現在地</p>
+          <h2 id="location-heading">現在地の設定</h2>
+        </div>
+        <button class="secondary-button" id="retry-location-button" type="button">GPSを再取得</button>
+      </div>
+      <div id="location-mode-banner" class="location-mode-banner is-hidden" aria-live="polite"></div>
+      <div id="location-status" class="location-status" aria-live="polite"></div>
+      <div id="fallback-panel" class="fallback-panel is-hidden">
+        <div class="fallback-copy">
+          <strong>近い場所を選んでください。</strong>
+        </div>
+        <label class="field">
+          <span>近くの目印</span>
+          <select id="fallback-landmark-select"></select>
+        </label>
+        <div class="fallback-actions">
+          <button class="primary-button" id="use-landmark-button" type="button">目印を使う</button>
+          <button class="secondary-button danger-button" id="use-center-button" type="button">位置がわからない</button>
+        </div>
+      </div>
+      <div class="location-status" aria-labelledby="wait-import-heading">
+        <div class="location-card">
+          <div class="section-head compact">
+            <div>
+              <p class="section-kicker">待ち時間</p>
+              <h2 id="wait-import-heading">待ち時間の確認</h2>
+            </div>
+            <button class="secondary-button" id="wait-import-open-button" type="button">待ち時間を確認する</button>
+          </div>
+          <p class="helper-copy">1. 待ち時間を確認する 　2. 開いたページでブックマークレットを押す</p>
+          <div class="inline-actions">
+            <a class="primary-button" id="wait-import-bookmarklet-link" href="#">ブックマークレット</a>
+            <button class="ghost-button" id="wait-import-copy-button" type="button">文字列をコピー</button>
+            <button class="ghost-button" id="wait-import-paste-button" type="button">クリップボードから反映</button>
+            <button class="secondary-button danger-button" id="wait-import-reset-button" type="button">待ち時間をリセット</button>
+          </div>
+          <div class="badge-row">
+            <span class="status-pill neutral" id="wait-import-status">未取得</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="guide-banner" aria-label="使い方ガイド">
+      ① 待ち時間を入力 → ② 候補に追加 → <br class="guide-break">③ 位置を選ぶ → ④ 候補を見る
+    </div>
+
+    <nav class="tab-bar" aria-label="Planner sections">
+      <button class="tab-button is-active" data-tab="attractions" type="button">アトラクション</button>
+      <button class="tab-button" data-tab="ranking" type="button">候補</button>
+      <button class="tab-button" data-tab="restaurants" type="button">レストラン</button>
+    </nav>
+
+    <main class="app-main">
+      <section class="panel" id="panel-attractions" data-panel="attractions">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">アトラクション</p>
+            <h2>アトラクション一覧</h2>
+          </div>
+          <p id="attractions-count" class="meta-count"></p>
+        </div>
+        <div class="filter-bar">
+          <label class="field grow">
+            <span>検索</span>
+            <input id="attraction-search" type="search" placeholder="名前・エリア・説明で検索">
+          </label>
+          <label class="field">
+            <span>エリア</span>
+            <select id="attraction-area-filter"></select>
+          </label>
+          <label class="field">
+            <span>分類</span>
+            <select id="attraction-display-filter"></select>
+          </label>
+        </div>
+        <div id="attractions-list" class="card-list"></div>
+      </section>
+
+      <section class="panel is-hidden" id="panel-ranking" data-panel="ranking">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">候補</p>
+            <h2>候補一覧</h2>
+          </div>
+          <div class="section-actions">
+            <button class="toggle-switch" id="toggle-times-button" type="button" aria-pressed="false">
+              <span class="toggle-switch-label">時刻を表示</span>
+              <span class="toggle-switch-track" aria-hidden="true">
+                <span class="toggle-switch-thumb"></span>
+              </span>
+            </button>
+            <button class="secondary-button" id="ranking-retry-location-button" type="button">GPSを再取得</button>
+            <button class="secondary-button" id="clear-ranking-button" type="button">全て外す</button>
+          </div>
+        </div>
+        <div class="route-controls">
+          <label class="field route-time-field">
+            <span>開始時刻</span>
+            <input id="route-start-time" type="time">
+          </label>
+          <button class="secondary-button" id="use-current-time-button" type="button">現在時刻を使う</button>
+        </div>
+        <div id="ranking-summary" class="summary-strip"></div>
+        <div id="ranking-list" class="card-list"></div>
+      </section>
+
+      <section class="panel is-hidden" id="panel-restaurants" data-panel="restaurants">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">レストラン</p>
+            <h2>レストラン一覧</h2>
+          </div>
+          <p id="restaurants-count" class="meta-count"></p>
+        </div>
+        <div class="filter-bar">
+          <label class="field grow">
+            <span>エリア</span>
+            <select id="restaurant-area-filter"></select>
+          </label>
+          <label class="field">
+            <span>分類</span>
+            <select id="restaurant-category-filter"></select>
+          </label>
+          <label class="field grow">
+            <span>検索</span>
+            <input id="restaurant-search" type="search" placeholder="名前・説明で検索">
+          </label>
+        </div>
+        <div id="restaurants-list" class="restaurant-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="./data/attractions.js"></script>
+  <script src="./attraction-durations.js"></script>
+  <script src="./data/restaurants.js"></script>
+  <script src="./data/restaurant-menus.js"></script>
+  <script src="./wait-import-config.js"></script>
+  <script src="./app.js"></script>
+  <script>
+    (function () {
+      var STORAGE_KEY = "tdl-cyber-theme";
+      var DEFAULT_THEME = "cyber";
+      var body = document.body;
+      var toggleButton = document.getElementById("theme-settings-toggle");
+      var panel = document.getElementById("theme-settings-panel");
+      var optionButtons = Array.from(document.querySelectorAll("[data-theme-choice]"));
+
+      function getSavedTheme() {
+        try {
+          return localStorage.getItem(STORAGE_KEY) || DEFAULT_THEME;
+        } catch (error) {
+          return DEFAULT_THEME;
+        }
+      }
+
+      function saveTheme(theme) {
+        try {
+          localStorage.setItem(STORAGE_KEY, theme);
+        } catch (error) {
+          // Ignore storage failures and keep the UI working.
+        }
+      }
+
+      function applyTheme(theme) {
+        var nextTheme = theme === "original" ? "original" : "cyber";
+        body.dataset.theme = nextTheme;
+        optionButtons.forEach(function (button) {
+          var isActive = button.dataset.themeChoice === nextTheme;
+          button.classList.toggle("is-active", isActive);
+          button.setAttribute("aria-pressed", isActive ? "true" : "false");
+        });
+      }
+
+      function setPanelOpen(isOpen) {
+        panel.classList.toggle("is-hidden", !isOpen);
+        toggleButton.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      }
+
+      applyTheme(getSavedTheme());
+
+      toggleButton.addEventListener("click", function () {
+        setPanelOpen(panel.classList.contains("is-hidden"));
+      });
+
+      optionButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var theme = button.dataset.themeChoice || DEFAULT_THEME;
+          applyTheme(theme);
+          saveTheme(theme);
+          setPanelOpen(false);
+        });
+      });
+
+      document.addEventListener("click", function (event) {
+        if (panel.classList.contains("is-hidden")) {
+          return;
+        }
+
+        if (panel.contains(event.target) || toggleButton.contains(event.target)) {
+          return;
+        }
+
+        setPanelOpen(false);
+      });
+    }());
+  </script>
+</body>
+</html>
